@@ -2,6 +2,8 @@ import { Body, Controller, Get, HttpStatus, Logger, Post, Res } from '@nestjs/co
 import { JoiPassword } from "joi-password";
 import { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import Knex from 'knex';
+import { NestjsKnexService } from 'nestjs-knexjs';
 
 enum gender {
     MALE = 'male',
@@ -17,7 +19,7 @@ enum gender {
     password: JoiPassword.string()
               .minOfSpecialCharacters(1)
               .minOfLowercase(1)
-              .minOfNumeric(2)
+              .minOfNumeric(1)
               .min(8),
     gender: Joi.string().valid('male', 'female'),
     birthDate: Joi.date()
@@ -26,10 +28,18 @@ enum gender {
 @Controller('user')
 export class UserController {
 
+    private readonly knex: Knex = null;
+
+    constructor(private nestjsKnexService: NestjsKnexService){
+        this.knex = this.nestjsKnexService.getKnexConnection();
+    }
+
     @Get()
     public async get(@Res() response: Response){
-        return response.status(HttpStatus.OK).send();
+        const tableData = await this.knex('user').select('*');
+        return response.status(HttpStatus.OK).send({ tableData });
     }
+
     
     @Post()
     public post(@Body() body: any, @Res() response: Response){
